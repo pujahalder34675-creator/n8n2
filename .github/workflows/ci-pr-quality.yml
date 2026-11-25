@@ -1,8 +1,17 @@
 name: 'CI: PR Quality Checks'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  merge_group:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - labeled
+      - unlabeled
+  issue_comment:
+    types:
+      - created
 
 jobs:
   pr-policy:

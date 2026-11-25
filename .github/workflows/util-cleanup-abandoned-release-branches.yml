@@ -1,8 +1,8 @@
 name: 'Util: Cleanup abandoned release branches'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
 
 jobs:
   delete-release-branch:

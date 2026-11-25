@@ -6,8 +6,13 @@
 
 name: 'Util: Refresh starter scaffold'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  # The release run moves the `latest` dist-tag of `@n8n/node-cli` before it
+  # completes, so `npm view @n8n/node-cli@latest` is current here. A beta
+  # release leaves `latest` alone and the version gate below skips the run.
+  workflow_run: # zizmor: ignore[dangerous-triggers] nothing from the triggering run is checked out or reaches a shell
+    workflows: ['Release: Publish']
+    types: [completed]
   workflow_dispatch:
     inputs:
       force:

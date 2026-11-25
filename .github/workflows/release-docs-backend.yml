@@ -4,8 +4,21 @@ name: 'Release: Backend docs'
 # updates https://n8n-backend-docs.pages.dev, and a PR gets a preview at
 # https://pr-<number>.n8n-backend-docs.pages.dev.
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/backend/**'
+      - 'packages/@n8n/backend-docs-site/**'
+      - '.github/workflows/release-docs-backend.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'docs/backend/**'
+      - 'packages/@n8n/backend-docs-site/**'
+      - '.github/workflows/release-docs-backend.yml'
   workflow_dispatch:
 
 permissions:

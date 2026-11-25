@@ -20,8 +20,15 @@ run-name: Codespace preview for PR ${{ github.event.pull_request.number || input
 # once a minute until the instance answers. A cancelled or timed-out job kills the
 # script mid-checklist, so the last step below writes the outcome instead.
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - closed
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       pr_number:

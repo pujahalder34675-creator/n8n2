@@ -1,8 +1,10 @@
 name: 'Util: Notify PR Status'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  pull_request_review:
+    types: [submitted, dismissed]
+  pull_request:
+    types: [closed]
 
 jobs:
   notify:

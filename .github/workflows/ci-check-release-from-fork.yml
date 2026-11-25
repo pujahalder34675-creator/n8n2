@@ -1,8 +1,15 @@
 name: 'CI: Block fork PRs to release branches'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'release/**'
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
 
 jobs:
   block-fork-prs:

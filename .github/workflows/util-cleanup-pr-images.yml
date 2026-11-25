@@ -1,8 +1,9 @@
 name: 'Util: Cleanup CI Docker Images'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  schedule:
+    # Daily cleanup at 3 AM UTC
+    - cron: '0 3 * * *'
 
 jobs:
   cleanup:

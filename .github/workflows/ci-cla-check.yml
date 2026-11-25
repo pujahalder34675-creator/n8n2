@@ -19,8 +19,12 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('CI: CLA Check
 #   - A single, edited-in-place PR comment listing unsigned contributors.
 #   - The `cla-signed` label, which community-PR triage tooling reads.
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+  merge_group:
   workflow_dispatch:
     inputs:
       pr_number:

@@ -11,8 +11,9 @@
 name: 'Security: Sync from Public'
 run-name: "${{ github.event_name == 'workflow_dispatch' && format('Security: Sync from Public (force={0})', inputs.force) || '' }}"
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       force:

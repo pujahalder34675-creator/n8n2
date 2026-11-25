@@ -1,7 +1,8 @@
 name: 'Test: E2E Coverage Nightly'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 2 * * *' # Nightly at 02:00 UTC
   workflow_dispatch:
 
 concurrency:

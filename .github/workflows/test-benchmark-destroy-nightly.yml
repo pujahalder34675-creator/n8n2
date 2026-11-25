@@ -1,7 +1,8 @@
 name: 'Test: Benchmark Destroy Env'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 permissions:

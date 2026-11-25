@@ -3,8 +3,14 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('Test: E2E Hel
 
 # Scope and design: packages/quality/environments/containers/HELM-TESTING.md
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 3 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/test-e2e-helm.yml'
+      - 'packages/quality/environments/containers/helm-stack.ts'
+      - 'packages/quality/environments/containers/helm-start-stack.ts'
   workflow_dispatch:
     inputs:
       branch:

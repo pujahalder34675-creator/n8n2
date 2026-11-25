@@ -1,6 +1,5 @@
 name: 'Build: Windows'
 
-# Run upstream automation only on request in this standalone repository.
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +18,15 @@ on:
     secrets:
       QBOT_SLACK_TOKEN:
         required: false
+  pull_request:
+    branches: [master]
+    paths:
+      - '**/package.json'
+      - '**/turbo.json'
+      - 'packages/cli/scripts/build.mjs'
+      - '.github/workflows/build-windows.yml'
+      - '.github/actions/setup-nodejs/**'
+
 jobs:
   build:
     runs-on: windows-latest

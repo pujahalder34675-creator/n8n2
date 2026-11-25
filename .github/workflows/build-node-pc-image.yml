@@ -9,8 +9,20 @@ name: 'Build: Node PC Image'
 # builds on its native runner and a manifest job stitches the per-arch images,
 # following docker-build-push.yml.
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docker/docker-bake.hcl'
+      - 'docker/images/node-pc/**'
+      - '.github/workflows/build-node-pc-image.yml'
+  pull_request:
+    paths:
+      - 'docker/docker-bake.hcl'
+      - 'docker/images/node-pc/**'
+      - '.github/scripts/docker/bake-inputs-changed.mjs'
+      - '.github/workflows/build-node-pc-image.yml'
   workflow_dispatch:
     inputs:
       push:

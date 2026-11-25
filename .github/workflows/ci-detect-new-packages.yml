@@ -1,7 +1,8 @@
 name: 'CI: Check Unpublished Packages'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '15 */2 * * 1-2'
   workflow_dispatch:
 
 permissions:

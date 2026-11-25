@@ -1,8 +1,11 @@
 name: 'CI: Master (Build, Test, Lint)'
 
-# Run upstream automation only on request in this standalone repository.
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - packages/@n8n/task-runner-python/**
 
 permissions:
   contents: read

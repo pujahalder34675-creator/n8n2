@@ -9,8 +9,10 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('Docker: Build
 env:
   NODE_OPTIONS: '--max-old-space-size=7168'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 0 * * *'
+
   workflow_call:
     inputs:
       n8n_version:

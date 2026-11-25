@@ -1,7 +1,8 @@
 name: 'Test: Link Check Weekly'
 
-# Run upstream automation only on request in this standalone repository.
 on:
+  schedule:
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
