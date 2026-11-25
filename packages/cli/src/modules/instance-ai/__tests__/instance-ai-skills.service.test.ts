@@ -1,6 +1,7 @@
 import { Agent } from '@n8n/agents';
 import type { User } from '@n8n/db';
 import { MockLanguageModelV3 } from 'ai/test';
+import nock from 'nock';
 import { mock } from 'vitest-mock-extended';
 import { loadInstanceAiSkills, resolvePromptProfile } from '@n8n/instance-ai';
 
@@ -118,6 +119,8 @@ describe('Assistant reads of user skills', () => {
 		skillRuntime.readForAssistant.mockResolvedValue(content);
 	});
 
+	afterEach(() => nock.cleanAll());
+
 	it('reads nothing while Assistant skills are off', async () => {
 		gate.isEnabled.mockResolvedValue(false);
 
@@ -165,6 +168,7 @@ describe('Assistant reads of user skills', () => {
 	it.each([false, true])(
 		'preserves the built-in model request with no applicable skills when the flag is %s',
 		async (enabled) => {
+			nock('https://models.dev').get('/api.json').reply(200, {});
 			gate.isEnabled.mockResolvedValue(enabled);
 			skillRuntime.listForAssistant.mockResolvedValue([]);
 			const builtIns = await service.loadSkills(openScope);

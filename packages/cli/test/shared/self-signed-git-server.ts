@@ -6,7 +6,7 @@ import path from 'node:path';
 
 /** Git reports a failed TLS verification differently per libcurl TLS backend. */
 export const TLS_VERIFICATION_ERROR =
-	/SSL certificate problem|server certificate verification failed/;
+	/SSL certificate problem|server certificate verification failed|(?:SSL certificate|server) verification failed: certificate signer not trusted/;
 
 /**
  * An HTTPS server with a self-signed certificate that answers every request

@@ -26,6 +26,7 @@ import type { CustomFetch, HttpTransport, OutboundHttp } from '@n8n/backend-netw
 import { GLOBAL_MEMBER_ROLE, type User } from '@n8n/db';
 import { convertArrayToReadableStream, MockLanguageModelV3 } from 'ai/test';
 import { NodeConnectionTypes } from 'n8n-workflow';
+import nock from 'nock';
 import { mock } from 'vitest-mock-extended';
 import type { ZodTypeAny } from 'zod';
 
@@ -2897,6 +2898,8 @@ describe('AgentsBuilderToolsService', () => {
 	});
 
 	describe('agent_builder_call_agent tool', () => {
+		afterEach(() => nock.cleanAll());
+
 		function getCallAgentTool(service: AgentsBuilderToolsService) {
 			return service
 				.getTools(agentId, projectId, credentialProvider, credentialService, user)
@@ -2918,6 +2921,7 @@ describe('AgentsBuilderToolsService', () => {
 		});
 
 		it('suspends for a target approval and resumes the same test run with the human decision', async () => {
+			nock('https://models.dev').get('/api.json').reply(200, {});
 			vi.spyOn(checkAccess, 'userHasScopes').mockResolvedValue(true);
 
 			type MockStreamResult = Awaited<ReturnType<MockLanguageModelV3['doStream']>>;

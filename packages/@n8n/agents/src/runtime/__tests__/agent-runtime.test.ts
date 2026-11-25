@@ -101,6 +101,7 @@ vi.mock('@ai-sdk/anthropic', async (importOriginal) => ({
 vi.mock(import('../../sdk/catalog.js'), async (importOriginal) => ({
 	...(await importOriginal()),
 	getModelCost: vi.fn().mockResolvedValue(undefined),
+	getModelContextWindow: vi.fn().mockResolvedValue(undefined),
 }));
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports

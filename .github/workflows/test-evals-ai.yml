@@ -108,29 +108,44 @@ jobs:
       spec_repetitions: ${{ steps.config.outputs.spec_repetitions }}
       spec_judges: ${{ steps.config.outputs.spec_judges }}
       experiment_prefix: ${{ steps.config.outputs.experiment_prefix }}
+      credentials_ready: ${{ steps.config.outputs.credentials_ready }}
     steps:
       - name: Set configuration based on trigger
         id: config
         env:
-          BRANCH: ${{ inputs.branch || 'master' }}
+          BRANCH: ${{ github.event_name == 'push' && github.ref || inputs.branch || 'master' }}
           SPEC_REPETITIONS: ${{ inputs.spec_repetitions || '1' }}
           SPEC_JUDGES: ${{ inputs.spec_judges || '1' }}
-          GITHUB_REF: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVAL_CREDENTIALS_READY: ${{ secrets.EVALS_ANTHROPIC_KEY != '' && secrets.EVALS_LANGSMITH_API_KEY != '' && 'true' || 'false' }}
         run: |
-          EVENT_NAME="${{ github.event_name }}"
+          if ! git check-ref-format "refs/heads/${BRANCH#refs/heads/}"; then
+            echo '::error::The evaluation branch is not a valid Git ref.'
+            exit 1
+          fi
+
+          if [[ "$EVAL_CREDENTIALS_READY" != 'true' ]]; then
+            echo '::notice::AI evaluations require EVALS_ANTHROPIC_KEY and EVALS_LANGSMITH_API_KEY. Skipping evaluations.'
+          fi
+          {
+            printf 'branch=%s\n' "$BRANCH"
+            printf 'credentials_ready=%s\n' "$EVAL_CREDENTIALS_READY"
+          } >> "$GITHUB_OUTPUT"
 
           if [ "$EVENT_NAME" = "push" ]; then
             # Merge to master: spec evals use 1 rep, 1 judge
             {
-              echo "branch=$GITHUB_REF"
               echo "spec_repetitions=1"
               echo "spec_judges=1"
               echo "experiment_prefix="
             } >> "$GITHUB_OUTPUT"
           else
             # Manual dispatch: use provided values for spec evals
+            if [[ ! "$SPEC_REPETITIONS" =~ ^[1-9][0-9]*$ || ! "$SPEC_JUDGES" =~ ^[1-9][0-9]*$ ]]; then
+              echo '::error::Spec repetitions and judges must be positive integers.'
+              exit 1
+            fi
             {
-              echo "branch=$BRANCH"
               echo "spec_repetitions=$SPEC_REPETITIONS"
               echo "spec_judges=$SPEC_JUDGES"
               echo "experiment_prefix=CI_manual"
@@ -140,7 +155,9 @@ jobs:
   run-pairwise-evals:
     name: Run Pairwise (Spec) Evaluations
     needs: determine-config
-    if: github.event_name == 'push' || inputs.eval_type == 'both' || inputs.eval_type == 'spec'
+    if: >-
+      needs.determine-config.outputs.credentials_ready == 'true' &&
+      (github.event_name == 'push' || inputs.eval_type == 'both' || inputs.eval_type == 'spec')
     uses: ./.github/workflows/test-evals-ai-reusable.yml
     with:
       branch: ${{ needs.determine-config.outputs.branch }}
@@ -154,7 +171,9 @@ jobs:
   run-llm-judge-evals:
     name: Run LLM Judge (Matrix) Evaluations
     needs: determine-config
-    if: github.event_name == 'push' || inputs.eval_type == 'both' || inputs.eval_type == 'matrix'
+    if: >-
+      needs.determine-config.outputs.credentials_ready == 'true' &&
+      (github.event_name == 'push' || inputs.eval_type == 'both' || inputs.eval_type == 'matrix')
     uses: ./.github/workflows/test-evals-ai-reusable.yml
     with:
       branch: ${{ needs.determine-config.outputs.branch }}

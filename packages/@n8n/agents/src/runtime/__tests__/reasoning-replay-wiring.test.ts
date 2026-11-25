@@ -94,6 +94,8 @@ describe('reasoning replay on the wire', () => {
 		const agent = new AgentRuntime({
 			name: 'replay-test',
 			model: { id, url: baseUrl, apiKey: 'k' } as never,
+			// The fixture uses loopback and must not use the ambient egress proxy.
+			modelFetch: globalThis.fetch,
 			instructions: 'test',
 			eventBus: new AgentEventBus(),
 			...(thinking ? { thinking } : {}),

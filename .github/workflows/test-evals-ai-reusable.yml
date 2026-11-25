@@ -38,28 +38,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch input
+        id: branch
         env:
           BRANCH: ${{ inputs.branch }}
         run: |
-          # Allowlist of refs permitted to run on this job. The job exposes
-          # secrets to code checked out from `BRANCH`, so anything outside the
-          # allowlist is rejected to prevent arbitrary refs from accessing them.
-          if [[ "$BRANCH" =~ ^(master|ai/.+|ai-.+)$ ]]; then
-            echo "Branch '$BRANCH' is allowed."
-          else
-            echo "::error::Branch '$BRANCH' is not in the allowlist. Permitted patterns: master, ai/*, ai-*"
+          # Accept both forms of a branch ref. Check out only the validated head.
+          NAME="${BRANCH#refs/heads/}"
+          REF="refs/heads/$NAME"
+          if [[ ! "$NAME" =~ ^(master|ai/.+|ai-.+)$ ]] || ! git check-ref-format "$REF"; then
+            echo '::error::Use a valid branch matching master, ai/*, or ai-*.'
             exit 1
           fi
+          {
+            printf 'name=%s\n' "$NAME"
+            printf 'ref=%s\n' "$REF"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ steps.branch.outputs.ref }}
 
       - name: Generate experiment name
         id: experiment
         env:
           PREFIX: ${{ inputs.experiment_name_prefix }}
-          BRANCH: ${{ inputs.branch }}
+          BRANCH: ${{ steps.branch.outputs.name }}
         run: |
           DATE=$(date +%Y_%m_%d)
 
