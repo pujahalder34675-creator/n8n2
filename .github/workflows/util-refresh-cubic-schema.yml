@@ -12,9 +12,8 @@ permissions:
 jobs:
   refresh-schema:
     name: Refresh vendored cubic schema
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'n8n-io/n8n')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.repository == 'n8n-io/n8n'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Every write goes through the scoped app token below, so the job's own

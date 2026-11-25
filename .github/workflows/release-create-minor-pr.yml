@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   check-cadence:
+    if: github.repository == 'n8n-io/n8n'
     name: Check release cadence
     runs-on: ubuntu-latest
     steps:

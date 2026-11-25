@@ -15,7 +15,7 @@ jobs:
   # ~30s cache hits rather than racing to build in parallel from cold.
   build:
     name: Install & Build
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -28,7 +28,7 @@ jobs:
     uses: ./.github/workflows/prepare-docker-reusable.yml
     with:
       build-variant: coverage
-      runner: blacksmith-8vcpu-ubuntu-2204
+      runner: ubuntu-latest
     secrets: inherit
 
   # Distribute the full e2e suite across shards by historical duration
@@ -38,7 +38,7 @@ jobs:
   generate-matrix:
     name: Generate shard matrix
     needs: build
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
@@ -66,7 +66,7 @@ jobs:
       # (keeps test-e2e-reusable coverage-agnostic). See run-coverage-shard.mjs.
       test-command: pnpm --filter=n8n-playwright coverage:shard
       workers: '1'
-      runner: blacksmith-4vcpu-ubuntu-2204
+      runner: ubuntu-latest
       timeout-minutes: 55
       pre-generated-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       artifact-prefix: coverage
@@ -81,7 +81,7 @@ jobs:
   unit-coverage:
     name: ${{ matrix.name }}
     needs: build
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -179,10 +179,12 @@ jobs:
         run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
 
       - name: Upload Python Coverage to Codecov
-        if: always()
+        if: always() && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: |
             packages/@n8n/task-runner-python/coverage.xml
             packages/@n8n/ai-workflow-builder.ee/evaluations/programmatic/python/coverage.xml
@@ -194,7 +196,7 @@ jobs:
     name: Aggregate Coverage
     needs: [e2e, unit-coverage, python-coverage]
     if: always() && needs.e2e.result != 'skipped' && needs.e2e.result != 'cancelled'
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -240,10 +242,13 @@ jobs:
           retention-days: 14
 
       - name: Upload Combined Coverage to Codecov
-        if: always()
+        id: upload-combined-coverage
+        if: always() && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: packages/quality/testing/playwright/coverage/lcov.info
           flags: nightly-full
           name: nightly-full-coverage
@@ -253,14 +258,17 @@ jobs:
       # report API will return the new flag data. Without this wait the
       # gap-analysis step that follows runs into 503s and bails.
       - name: Wait for Codecov to index upload
-        if: always()
+        if: always() && steps.upload-combined-coverage.outcome == 'success' && env.HAS_CODECOV_API_TOKEN == 'true'
+        env:
+          HAS_CODECOV_API_TOKEN: ${{ secrets.CODECOV_API_TOKEN != '' }}
         shell: bash
         run: sleep 60
 
       # Advisory only: a Codecov API hiccup (e.g. a 503) must not red the whole
       # nightly nor block the impact-map refresh, which runs off the built map.
       - name: Analyse Coverage Gaps
-        if: always()
+        id: analyse-coverage-gaps
+        if: always() && steps.upload-combined-coverage.outcome == 'success' && env.CODECOV_API_TOKEN != ''
         continue-on-error: true
         env:
           CODECOV_API_TOKEN: ${{ secrets.CODECOV_API_TOKEN }}
@@ -269,7 +277,7 @@ jobs:
             --md --top=15 --out-json=coverage-gaps.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Coverage Gap Report
-        if: always()
+        if: always() && steps.analyse-coverage-gaps.outcome == 'success'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: coverage-gap-report
@@ -294,7 +302,8 @@ jobs:
   commit-impact-map:
     name: Commit refreshed impact map
     needs: [e2e, aggregate]
-    if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped' && needs.aggregate.result == 'success' }}
+    if: >-
+      github.repository == 'n8n-io/n8n' && (!cancelled() && github.ref_name == github.event.repository.default_branch && needs.e2e.result != 'cancelled' && needs.e2e.result != 'skipped' && needs.aggregate.result == 'success')
     runs-on: ubuntu-latest
     # Least-privilege GITHUB_TOKEN: checkout + download-artifact only need read;
     # the branch push + PR are done with the scoped app token below, not this token.
@@ -421,6 +430,7 @@ jobs:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
       - name: Notify Slack
+        if: env.SLACK_TOKEN != ''
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
         run: |

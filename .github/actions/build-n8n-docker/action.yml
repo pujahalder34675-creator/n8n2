@@ -27,6 +27,13 @@ runs:
         path: /tmp/n8n-images
         lookup-only: true
 
+    - name: Free disk space for the standalone image build
+      if: steps.cache-check.outputs.cache-hit != 'true' && github.repository == 'pujahalder34675-creator/n8n2' && runner.environment == 'github-hosted' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        df -h
+
     - name: Build Docker image
       if: steps.cache-check.outputs.cache-hit != 'true'
       uses: ./.github/actions/setup-nodejs

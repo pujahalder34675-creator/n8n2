@@ -8,10 +8,11 @@ permissions: {}
 
 jobs:
   promote-github-releases:
+    if: github.repository == 'n8n-io/n8n'
     permissions:
       contents: write
     name: Promote current stable releases as latest
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     environment: release
 
     steps:

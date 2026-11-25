@@ -29,6 +29,7 @@ on:
 
 jobs:
   determine-version-info:
+    if: github.repository == 'n8n-io/n8n'
     name: Determine publishing track
     runs-on: ubuntu-latest
     outputs:

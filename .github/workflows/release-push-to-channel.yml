@@ -32,6 +32,7 @@ on:
 
 jobs:
   validate-inputs:
+    if: github.repository == 'n8n-io/n8n'
     name: Validate Inputs
     runs-on: ubuntu-latest
     outputs:

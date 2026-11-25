@@ -23,7 +23,8 @@ permissions: {}
 
 jobs:
   dispatch-review:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request_review'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request_review')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -47,7 +48,8 @@ jobs:
           done
 
   required-reviews:
-    if: github.event_name != 'workflow_run'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event_name != 'workflow_run')
     uses: n8n-io/github-actions/.github/workflows/ownership-checks.yml@565cebcd8f10f91c5164219e827c30b6f9d46708 # v1.1.0
     permissions:
       id-token: write

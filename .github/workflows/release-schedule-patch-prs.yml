@@ -7,6 +7,7 @@ on:
 
 jobs:
   create-patch-prs:
+    if: github.repository == 'n8n-io/n8n'
     name: Create patch release PR (${{ matrix.track }})
     strategy:
       matrix:
@@ -21,7 +22,8 @@ jobs:
     name: Notify Slack on failure
     runs-on: ubuntu-latest
     needs: [create-patch-prs]
-    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && contains(needs.*.result, 'failure'))
     permissions:
       contents: read
     steps:

@@ -6,8 +6,9 @@ on:
 
 jobs:
   ensure-release-candidate-branches:
+    if: github.repository == 'n8n-io/n8n'
     name: Ensure release-candidate branches
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:

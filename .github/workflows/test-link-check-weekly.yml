@@ -11,8 +11,8 @@ permissions:
 jobs:
   check:
     name: Check links in packages/
-    if: github.repository == 'n8n-io/n8n'
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-2vcpu-ubuntu-2204' }}
+    if: (github.repository == 'n8n-io/n8n' || github.repository == 'pujahalder34675-creator/n8n2')
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       LYCHEE_VERSION: '0.24.2'
@@ -79,6 +79,7 @@ jobs:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
       - name: Notify Slack
+        if: env.SLACK_TOKEN != ''
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
         run: |

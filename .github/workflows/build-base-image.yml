@@ -29,6 +29,7 @@ on:
 
 jobs:
   build:
+    if: github.repository == 'n8n-io/n8n'
     runs-on: ubuntu-latest
     env:
       PLATFORMS: linux/amd64,linux/arm64

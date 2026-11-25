@@ -81,7 +81,7 @@ jobs:
 
   notify-on-failure:
     name: Notify Slack on failure
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs: [lint, e2e, fast-checks-windows]
     if: ${{ always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure') }}
     steps:
@@ -91,6 +91,7 @@ jobs:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
       - name: Notify Slack
+        if: env.SLACK_TOKEN != ''
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
         run: |

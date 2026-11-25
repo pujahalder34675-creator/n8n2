@@ -53,6 +53,7 @@ permissions: {}
 
 jobs:
   resolve-release-base:
+    if: github.repository == 'n8n-io/n8n'
     runs-on: ubuntu-latest
     permissions:
       contents: read

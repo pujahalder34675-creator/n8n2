@@ -43,6 +43,7 @@ permissions:
 
 jobs:
   build-snapshot:
+    if: github.repository == 'n8n-io/n8n'
     name: ${{ inputs.verify_image_only && 'Verify Daytona image' || 'Build versioned Daytona snapshot' }} (${{ matrix.environment }})
     runs-on: ubuntu-latest
     # Serialize builds per version+environment: overlapping creates for the same

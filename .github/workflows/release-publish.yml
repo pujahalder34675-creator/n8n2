@@ -15,7 +15,8 @@ jobs:
   determine-version-info:
     name: Determine publishing track
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event.pull_request.merged == true)
     outputs:
       track: ${{ steps.determine-info.outputs.track }}
       previous_version: ${{ steps.determine-info.outputs.previous_version }}
@@ -230,13 +231,8 @@ jobs:
         promote-stable-tag,
         build-daytona-snapshot,
       ]
-    if: |
-      always() &&
-      needs.publish-to-npm.result == 'success' &&
-      needs.create-github-release.result == 'success' &&
-      needs.build-daytona-snapshot.result == 'success' &&
-      (needs.move-track-tag.result == 'success' || needs.move-track-tag.result == 'skipped') &&
-      (needs.promote-stable-tag.result == 'success' || needs.promote-stable-tag.result == 'skipped')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && needs.publish-to-npm.result == 'success' && needs.create-github-release.result == 'success' && needs.build-daytona-snapshot.result == 'success' && (needs.move-track-tag.result == 'success' || needs.move-track-tag.result == 'skipped') && (needs.promote-stable-tag.result == 'success' || needs.promote-stable-tag.result == 'skipped'))
     uses: ./.github/workflows/release-publish-post-release.yml
     with:
       track: ${{ needs.determine-version-info.outputs.track }}
@@ -265,10 +261,8 @@ jobs:
         merge-prerelease-tag-to-3x,
         post-release,
       ]
-    if: |
-      always() &&
-      github.event.pull_request.merged == true &&
-      (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && github.event.pull_request.merged == true && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

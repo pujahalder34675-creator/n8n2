@@ -33,12 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 2vcpu is where installs actually run; 4vcpu covers the unit/lint jobs
-        # that also install; ubuntu-latest is the non-Blacksmith control.
-        runner:
-          - blacksmith-2vcpu-ubuntu-2204
-          - blacksmith-4vcpu-ubuntu-2204
-          - ubuntu-latest
+        runner: [ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     # par=1 is sequential, so a genuinely degraded path makes this slow — which is
     # itself the answer. Bounded so it cannot hang a runner indefinitely.

@@ -46,11 +46,12 @@ permissions: {}
 
 jobs:
   create-github-releases:
+    if: github.repository == 'n8n-io/n8n'
     permissions:
       contents: write
       id-token: write
     name: Create GitHub releases
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     environment: release
 
     steps:

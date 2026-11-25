@@ -25,8 +25,9 @@ on:
 
 jobs:
   release-notification:
+    if: github.repository == 'n8n-io/n8n'
     name: Send version release notifications
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     environment: release
     steps:
       - name: Checkout

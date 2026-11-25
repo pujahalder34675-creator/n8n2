@@ -109,6 +109,7 @@ on:
 
 jobs:
   determine-build-context:
+    if: github.repository == 'n8n-io/n8n'
     name: Determine Build Context
     runs-on: ubuntu-latest
     outputs:
@@ -151,13 +152,13 @@ jobs:
   build-app:
     name: Build application for Docker images
     needs: determine-build-context
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
       contents: read
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 1
@@ -553,14 +554,8 @@ jobs:
     name: Call Success URL
     needs: [determine-build-context, build-app, build-and-push-docker, create_multi_arch_manifest]
     runs-on: ubuntu-latest
-    if: |
-      always() &&
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.success_url != '' &&
-      needs.determine-build-context.result == 'success' &&
-      needs.build-app.result == 'success' &&
-      needs.build-and-push-docker.result == 'success' &&
-      (needs.create_multi_arch_manifest.result == 'success' || needs.create_multi_arch_manifest.result == 'skipped')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && github.event_name == 'workflow_dispatch' && github.event.inputs.success_url != '' && needs.determine-build-context.result == 'success' && needs.build-app.result == 'success' && needs.build-and-push-docker.result == 'success' && (needs.create_multi_arch_manifest.result == 'success' || needs.create_multi_arch_manifest.result == 'skipped'))
     steps:
       - name: Call Success URL
         env:
@@ -721,14 +716,8 @@ jobs:
         provenance-runners-distroless,
         provenance-runners-debian,
       ]
-    if: |
-      always() &&
-      inputs.create_attestations &&
-      needs.create_multi_arch_manifest.result == 'success' &&
-      (needs.determine-build-context.outputs.release_type == 'stable' ||
-       needs.determine-build-context.outputs.release_type == 'rc' ||
-       needs.determine-build-context.outputs.release_type == 'nightly' ||
-       github.event_name == 'workflow_dispatch')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && inputs.create_attestations && needs.create_multi_arch_manifest.result == 'success' && (needs.determine-build-context.outputs.release_type == 'stable' ||  needs.determine-build-context.outputs.release_type == 'rc' ||  needs.determine-build-context.outputs.release_type == 'nightly' ||  github.event_name == 'workflow_dispatch'))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -833,22 +822,16 @@ jobs:
         provenance-runners-distroless,
         provenance-runners-debian,
       ]
-    if: |
-      always() &&
-      inputs.create_attestations &&
-      needs.create_multi_arch_manifest.result == 'success' &&
-      (needs.determine-build-context.outputs.release_type == 'stable' ||
-       needs.determine-build-context.outputs.release_type == 'rc' ||
-       needs.determine-build-context.outputs.release_type == 'nightly' ||
-       github.event_name == 'workflow_dispatch')
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && inputs.create_attestations && needs.create_multi_arch_manifest.result == 'success' && (needs.determine-build-context.outputs.release_type == 'stable' ||  needs.determine-build-context.outputs.release_type == 'rc' ||  needs.determine-build-context.outputs.release_type == 'nightly' ||  github.event_name == 'workflow_dispatch'))
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       id-token: write
       packages: write
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -987,9 +970,8 @@ jobs:
         security-scan-runners,
         security-scan-runners-debian,
       ]
-    if: |
-      always() && github.event_name == 'schedule' &&
-      (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && github.event_name == 'schedule' && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')))
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

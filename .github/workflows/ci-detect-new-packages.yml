@@ -30,7 +30,7 @@ jobs:
         run: node .github/scripts/detect-new-packages.mjs --report-only --strict
 
       - name: Notify Developer Platform alerts channel
-        if: steps.detect.outputs.packages != '[]'
+        if: steps.detect.outputs.packages != '[]' && env.SLACK_TOKEN != ''
         env:
           PACKAGES: ${{ steps.detect.outputs.packages }}
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}

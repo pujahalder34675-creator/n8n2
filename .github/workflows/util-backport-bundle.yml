@@ -25,7 +25,7 @@ jobs:
       github.repository == 'n8n-io/n8n-private' &&
       (github.event.pull_request.merged == true ||
       github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App Token
         id: generate-token

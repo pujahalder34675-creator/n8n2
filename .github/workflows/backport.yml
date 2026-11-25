@@ -20,10 +20,8 @@ jobs:
       contents: write
       pull-requests: write
     # Runs on: PR merge, a "Backport to ..." label added to a merged PR, or manual dispatch
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.action == 'closed' && github.event.pull_request.merged == true) ||
-      (github.event.action == 'labeled' && github.event.pull_request.merged == true && startsWith(github.event.label.name, 'Backport to'))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event_name == 'workflow_dispatch' || (github.event.action == 'closed' && github.event.pull_request.merged == true) || (github.event.action == 'labeled' && github.event.pull_request.merged == true && startsWith(github.event.label.name, 'Backport to')))
     # ubuntu-slim still ships git 2.54.0, whose shallow-fetch regression makes
     # the backport action's `git fetch --depth=1` die on a target branch that
     # exists. ubuntu-latest is on 2.55.0, which has the fix.
@@ -97,7 +95,7 @@ jobs:
       pull-requests: write
     needs: [backport]
     if: needs.backport.outputs.created_pull_numbers != ''
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     outputs:
       pr_numbers_json: ${{ steps.filter.outputs.pr_numbers_json }}
     steps:

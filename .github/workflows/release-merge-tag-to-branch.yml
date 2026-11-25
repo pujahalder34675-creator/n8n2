@@ -20,6 +20,7 @@ on:
 
 jobs:
   merge-tag-to-branch:
+    if: github.repository == 'n8n-io/n8n'
     name: Merge release tag to ${{ inputs.target-branch }}
     runs-on: ubuntu-latest
     environment: minor-release-tag-merge
@@ -69,7 +70,8 @@ jobs:
   notify-on-failure:
     name: Notify Slack on failure
     needs: [merge-tag-to-branch]
-    if: ${{ always() && needs.merge-tag-to-branch.result == 'failure' }}
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && needs.merge-tag-to-branch.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -76,14 +76,14 @@ env:
 jobs:
   unit-test-backend:
     name: Backend Unit Tests
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     env:
       COVERAGE_ENABLED: ${{ inputs.warmPrCache || inputs.collectCoverage }}
       COVERAGE_SCOPE: ${{ inputs.warmPrCache && 'changed-files' || (inputs.collectCoverage && inputs.changedFiles != '' && 'changed-files' || 'all') }}
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.warmPrCache && '.github/cache-warm' || inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -123,7 +123,7 @@ jobs:
         run: pnpm --filter=@n8n/rig test:unit
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -131,25 +131,29 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: backend-unit-tests
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true' && !inputs.warmPrCache
+        if: env.COVERAGE_ENABLED == 'true' && !inputs.warmPrCache && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: backend-unit
           name: backend-unit
           files: ./packages/**/coverage/lcov.info
 
   unit-test-cli:
     name: CLI Unit Tests (${{ matrix.shard }}/2)
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -159,7 +163,7 @@ jobs:
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -172,7 +176,7 @@ jobs:
         run: node packages/quality/testing/janitor/dist/cli.js test-run --full-task=test:unit --scoped-task=test:unit:changed --filter=n8n --only --summarize -- --shard=${{ matrix.shard }}/2 --maxWorkers=100% --passWithNoTests
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -180,32 +184,36 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: cli-unit-tests-${{ matrix.shard }}
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
+        if: env.COVERAGE_ENABLED == 'true' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: backend-unit
           name: cli-unit-${{ matrix.shard }}
           files: ./packages/**/coverage/lcov.info
 
   integration-test-backend:
     name: Backend Integration Tests
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     env:
       COVERAGE_ENABLED: ${{ inputs.warmPrCache || inputs.collectCoverage }}
       COVERAGE_SCOPE: ${{ inputs.warmPrCache && 'changed-files' || (inputs.collectCoverage && inputs.changedFiles != '' && 'changed-files' || 'all') }}
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.warmPrCache && '.github/cache-warm' || inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -228,7 +236,7 @@ jobs:
         run: node packages/quality/testing/janitor/dist/cli.js test-run --full-task=test:integration --continue --concurrency=1 --filter='!./packages/frontend/**' --filter='!./packages/modules/*/frontend' --filter='!n8n' --summarize
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -236,25 +244,29 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: backend-integration-tests
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true' && !inputs.warmPrCache
+        if: env.COVERAGE_ENABLED == 'true' && !inputs.warmPrCache && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: backend-integration
           name: backend-integration
           files: ./packages/**/coverage/lcov.info
 
   integration-test-cli:
     name: CLI Integration Tests (${{ matrix.shard }}/2)
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -264,7 +276,7 @@ jobs:
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -277,7 +289,7 @@ jobs:
         run: node packages/quality/testing/janitor/dist/cli.js test-run --full-task=test:integration ${{ !inputs.fullCliIntegration && '--scoped-task=test:integration:changed' || '' }} --filter=n8n --only --summarize -- --shard=${{ matrix.shard }}/2 --maxWorkers=50% --passWithNoTests
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -285,31 +297,35 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: cli-integration-tests-${{ matrix.shard }}
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
+        if: env.COVERAGE_ENABLED == 'true' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: backend-integration
           name: cli-integration-${{ matrix.shard }}
           files: ./packages/**/coverage/lcov.info
 
   unit-test-nodes:
     name: Nodes Unit Tests
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     env:
       COVERAGE_ENABLED: ${{ inputs.collectCoverage }} # Coverage collected when true
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -324,7 +340,7 @@ jobs:
         run: node packages/quality/testing/janitor/dist/cli.js test-run --full-task=test --scoped-task=test:changed --filter=n8n-nodes-base --summarize -- --maxWorkers=100%
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -332,25 +348,29 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: nodes-unit-tests
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
+        if: env.COVERAGE_ENABLED == 'true' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: nodes-unit
           name: nodes-unit
           files: ./packages/**/coverage/lcov.info
 
   unit-test-frontend:
     name: Frontend (${{ matrix.shard }}/4)
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -360,7 +380,7 @@ jobs:
       AFFECTED_PACKAGES: ${{ inputs.affectedPackages }}
       CHANGED_FILES: ${{ inputs.changedFiles }}
     steps:
-      - uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
@@ -373,7 +393,7 @@ jobs:
         run: node packages/quality/testing/janitor/dist/cli.js test-run --full-task=test --scoped-task=test:changed --continue --filter='./packages/frontend/**' --filter='./packages/modules/*/frontend' --only --summarize -- --shard=${{ matrix.shard }}/4
 
       - name: Send Test Stats
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.QA_METRICS_WEBHOOK_URL != '' && env.QA_METRICS_WEBHOOK_USER != '' && env.QA_METRICS_WEBHOOK_PASSWORD != '' }}
         run: node .github/scripts/send-build-stats.mjs || true
         env:
           QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
@@ -381,18 +401,22 @@ jobs:
           QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           report_type: test_results
           name: frontend-shard-${{ matrix.shard }}-tests
 
       - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
+        if: env.COVERAGE_ENABLED == 'true' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           flags: frontend
           name: frontend-shard-${{ matrix.shard }}
           files: ./packages/**/coverage/lcov.info

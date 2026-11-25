@@ -17,7 +17,7 @@ jobs:
   resolve-nightly-build:
     name: Resolve nightly Docker build
     if: github.repository == 'n8n-io/n8n'
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 130
     permissions:
       actions: read
@@ -69,13 +69,13 @@ jobs:
   validate-image-sboms:
     name: Validate nightly image SBOMs
     needs: resolve-nightly-build
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@bcec731f1eb1367240608d1c889a75b96db6ec53 # v1.5.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -123,7 +123,7 @@ jobs:
       always() &&
       github.event_name == 'schedule' &&
       (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -133,6 +133,7 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Notify Slack
+        if: env.SLACK_TOKEN != ''
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

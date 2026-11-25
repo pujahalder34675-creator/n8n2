@@ -40,6 +40,7 @@ jobs:
   # an image only when its own inputs (its bake target, the Dockerfile and the
   # files it copies in) changed. `images` lists the images to build.
   prepare:
+    if: github.repository == 'n8n-io/n8n'
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.images.outputs.changed }}
@@ -127,8 +128,8 @@ jobs:
       matrix:
         image: ${{ fromJSON(needs.prepare.outputs.images) }}
         platform:
-          - { name: linux/amd64, runner: blacksmith-32vcpu-ubuntu-2204, arch: amd64 }
-          - { name: linux/arm64, runner: blacksmith-32vcpu-ubuntu-2204-arm, arch: arm64 }
+          - { name: linux/amd64, runner: ubuntu-latest, arch: amd64 }
+          - { name: linux/arm64, runner: ubuntu-24.04-arm, arch: arm64 }
     env:
       NODE_VERSION: ${{ needs.prepare.outputs[format('node_version_{0}', matrix.image.key)] }}
       BUILD_ARGS: ${{ needs.prepare.outputs[format('build_args_{0}', matrix.image.key)] }}
@@ -193,7 +194,8 @@ jobs:
   # A failed build for another image does not block publication.
   create-multi-arch-manifest:
     needs: [prepare, build]
-    if: always() && needs.prepare.outputs.changed == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (always() && needs.prepare.outputs.changed == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true)))
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

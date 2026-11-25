@@ -27,6 +27,7 @@ permissions:
 
 jobs:
   publish-to-npm:
+    if: github.repository == 'n8n-io/n8n'
     name: Publish to NPM
     runs-on: ubuntu-latest
     timeout-minutes: 30

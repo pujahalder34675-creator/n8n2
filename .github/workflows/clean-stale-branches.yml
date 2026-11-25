@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   remove-stale-branches:
+    if: github.repository == 'n8n-io/n8n'
     name: Remove stale branches
     runs-on: ubuntu-latest
     steps:

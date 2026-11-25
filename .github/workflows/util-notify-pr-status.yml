@@ -10,10 +10,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     if: >-
-      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
-      (github.event_name == 'pull_request_review' && github.event.review.state == 'dismissed') ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == false && github.event.action == 'closed')
+      github.repository == 'n8n-io/n8n' && ((github.event_name == 'pull_request_review' && github.event.review.state == 'approved') || (github.event_name == 'pull_request_review' && github.event.review.state == 'dismissed') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.event_name == 'pull_request' && github.event.pull_request.merged == false && github.event.action == 'closed'))
     env:
       NOTIFY_URL: ${{ secrets.N8N_NOTIFY_PR_STATUS_CHANGED_URL }}
     steps:

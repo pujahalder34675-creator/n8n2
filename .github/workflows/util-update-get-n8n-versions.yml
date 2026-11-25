@@ -16,9 +16,7 @@ jobs:
   update-versions:
     name: Update get-n8n versions
     if: >-
-      github.ref_name == github.event.repository.default_branch &&
-      (github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'n8n-io/n8n'))
+      github.repository == 'n8n-io/n8n' && (github.ref_name == github.event.repository.default_branch && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.repository == 'n8n-io/n8n')))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:

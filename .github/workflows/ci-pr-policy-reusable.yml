@@ -12,7 +12,7 @@ permissions: {}
 jobs:
   classify:
     name: Classify PR
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     outputs:
       skip-ci: ${{ steps.policy.outputs.skip-ci }}
     steps:

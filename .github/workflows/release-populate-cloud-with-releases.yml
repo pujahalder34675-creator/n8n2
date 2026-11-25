@@ -33,8 +33,9 @@ on:
 
 jobs:
   populate-cloud-with-releases:
+    if: github.repository == 'n8n-io/n8n'
     name: Populate cloud databases with new release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     environment: release
     outputs:
       has_node_enhancements: ${{ steps.get-changes.outputs.has_node_enhancements }}

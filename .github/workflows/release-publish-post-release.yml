@@ -35,7 +35,8 @@ on:
 jobs:
   push-new-release-to-channel:
     name: Push new release to channel
-    if: inputs.release_type != 'rc'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc')
     uses: ./.github/workflows/release-push-to-channel.yml
     secrets: inherit
     with:
@@ -44,9 +45,8 @@ jobs:
 
   promote-previous-beta-to-stable:
     name: Promote previous beta to stable
-    if: |
-      inputs.release_type != 'rc' &&
-      inputs.bump == 'minor'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc' && inputs.bump == 'minor')
     uses: ./.github/workflows/release-push-to-channel.yml
     secrets: inherit
     with:
@@ -55,9 +55,8 @@ jobs:
 
   promote-backport-labels:
     name: Promote backport labels
-    if: |
-      inputs.release_type != 'rc' &&
-      inputs.bump == 'minor'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc' && inputs.bump == 'minor')
     uses: ./.github/workflows/release-promote-backport-labels.yml
     secrets:
       N8N_ASSISTANT_APP_ID: ${{ secrets.N8N_ASSISTANT_APP_ID }}
@@ -67,9 +66,8 @@ jobs:
 
   promote-previous-minor-github-release-to-latest:
     name: Promote previous minor Github Release to latest
-    if: |
-      inputs.release_type != 'rc' &&
-      inputs.bump == 'minor'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc' && inputs.bump == 'minor')
     uses: ./.github/workflows/release-promote-github-release.yml
     secrets: inherit
     with:
@@ -77,8 +75,8 @@ jobs:
 
   ensure-release-candidate-branches:
     name: 'Ensure release candidate branches'
-    if: |
-      inputs.release_type != 'rc'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc')
     uses: ./.github/workflows/util-ensure-release-candidate-branches.yml
     secrets: inherit
 
@@ -86,13 +84,13 @@ jobs:
     name: Ensure correct latest version on npm
     # Also runs on beta patches: standalone packages pin `latest` to the newest
     # beta, so every beta publish needs a re-pin, not just stable promotions.
-    if: |
-      inputs.release_type != 'rc' &&
-      (inputs.bump == 'minor' || inputs.track == 'stable' || inputs.track == 'beta')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc' && (inputs.bump == 'minor' || inputs.track == 'stable' || inputs.track == 'beta'))
     uses: ./.github/workflows/release-set-stable-npm-packages-to-latest.yml
     secrets: inherit
 
   populate-cloud-with-releases:
+    if: github.repository == 'n8n-io/n8n'
     name: 'Populate cloud database with releases'
     uses: ./.github/workflows/release-populate-cloud-with-releases.yml
     with:
@@ -103,8 +101,8 @@ jobs:
 
   send-version-release-notification:
     name: 'Send version release notifications'
-    if: |
-      inputs.release_type != 'rc'
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc')
     uses: ./.github/workflows/release-version-release-notification.yml
     with:
       previous-version: ${{ inputs.previous_version }}
@@ -115,10 +113,8 @@ jobs:
     name: 'Publish Public API schema'
     # Runs when the `stable` tag moves: on a stable patch release, or on a minor
     # release that promotes the previous beta to stable.
-    if: |
-      inputs.release_type != 'rc' &&
-      !inputs.prerelease &&
-      (inputs.track == 'stable' || inputs.new_stable_version != '')
+    if: >-
+      github.repository == 'n8n-io/n8n' && (inputs.release_type != 'rc' && !inputs.prerelease && (inputs.track == 'stable' || inputs.new_stable_version != ''))
     permissions:
       contents: read
       deployments: write

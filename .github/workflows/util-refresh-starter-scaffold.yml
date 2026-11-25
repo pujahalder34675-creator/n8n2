@@ -32,11 +32,8 @@ concurrency:
 jobs:
   refresh:
     name: Refresh n8n-nodes-starter scaffold
-    if: |
-      github.repository == 'n8n-io/n8n' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'pull_request'))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.repository == 'n8n-io/n8n' && (github.event_name == 'workflow_dispatch' ||  (github.event.workflow_run.conclusion == 'success' &&   github.event.workflow_run.event == 'pull_request')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Every write goes through the scoped app token below, so the job's own

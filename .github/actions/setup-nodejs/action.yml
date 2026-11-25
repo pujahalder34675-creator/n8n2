@@ -379,8 +379,11 @@ runs:
       if: ${{ inputs.build-command != '' }}
       env:
         BUILD_COMMAND: ${{ inputs.build-command }}
+        TURBO_CONCURRENCY: ${{ env.TURBO_CONCURRENCY || '2' }}
       run: |
         $BUILD_COMMAND --summarize
-        node .github/scripts/send-build-stats.mjs || true
-        node .github/scripts/send-docker-stats.mjs || true
+        if [[ -n "${QA_METRICS_WEBHOOK_URL:-}" && -n "${QA_METRICS_WEBHOOK_USER:-}" && -n "${QA_METRICS_WEBHOOK_PASSWORD:-}" ]]; then
+          node .github/scripts/send-build-stats.mjs || true
+          node .github/scripts/send-docker-stats.mjs || true
+        fi
       shell: bash

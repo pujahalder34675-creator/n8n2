@@ -32,7 +32,7 @@ env:
 jobs:
   build:
     name: 'Build Docker Image'
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
@@ -65,7 +65,7 @@ jobs:
   helm-e2e:
     name: 'Helm E2E (${{ matrix.example }})'
     needs: build
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
@@ -161,7 +161,7 @@ jobs:
     name: 'Cleanup GHCR Image'
     needs: [build, helm-e2e]
     if: always()
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
@@ -184,7 +184,7 @@ jobs:
     name: Notify Slack on nightly failure
     needs: [build, helm-e2e]
     if: always() && contains(needs.*.result, 'failure') && github.event_name == 'schedule'
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -194,6 +194,7 @@ jobs:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
       - name: Notify Slack
+        if: env.SLACK_TOKEN != ''
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
         run: |

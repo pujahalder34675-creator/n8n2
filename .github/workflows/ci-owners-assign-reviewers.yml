@@ -22,12 +22,8 @@ jobs:
     #  - Bot-authored PRs (Dependabot, etc.), except cat-bot which
     #    opts in explicitly so a human-applied label can route its PRs to the
     #    owning team
-    if: |
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (github.event.pull_request.user.type != 'Bot' ||
-       github.event.pull_request.user.login == 'n8n-cat-bot[bot]') &&
-      (contains(github.event.pull_request.labels.*.name, 'Auto-assign reviewers') ||
-       contains(github.event.pull_request.labels.*.name, 'Auto-assign required reviewers'))
+    if: >-
+      github.repository == 'n8n-io/n8n' && (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.user.type != 'Bot' ||  github.event.pull_request.user.login == 'n8n-cat-bot[bot]') && (contains(github.event.pull_request.labels.*.name, 'Auto-assign reviewers') ||  contains(github.event.pull_request.labels.*.name, 'Auto-assign required reviewers')))
     concurrency:
       group: owners-assign-reviewers-${{ github.event.pull_request.number }}
     runs-on: ubuntu-latest

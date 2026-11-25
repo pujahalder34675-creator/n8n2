@@ -59,7 +59,7 @@ jobs:
           Write-Host "`n✓ Smoke test passed"
 
       - name: Send Slack notification on failure
-        if: failure() && inputs.notify_on_failure == true
+        if: failure() && inputs.notify_on_failure == true && env.SLACK_TOKEN != ''
         shell: bash
         env:
           SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
