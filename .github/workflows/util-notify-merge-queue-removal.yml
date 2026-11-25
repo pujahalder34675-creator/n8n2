@@ -1,9 +1,9 @@
 name: 'Util: Notify Merge Queue Removal'
 
 # GitHub rejects pull_request_target for the dequeued type at startup.
+# Run upstream automation only on request in this standalone repository.
 on:
-  pull_request:
-    types: [dequeued]
+  workflow_dispatch:
 
 permissions: {}
 

@@ -1,15 +1,8 @@
 name: 'Test: Evals AI'
 run-name: "${{ github.event_name == 'workflow_dispatch' && format('Test: Evals AI on {0} (eval_type={1}, spec_repetitions={2}, spec_judges={3})', inputs.branch, inputs.eval_type, inputs.spec_repetitions, inputs.spec_judges) || '' }}"
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'packages/@n8n/ai-workflow-builder.ee/src/prompts/**'
-      - 'packages/@n8n/ai-workflow-builder.ee/**/*.prompt.ts'
-      - '.github/workflows/test-evals-ai.yml'
-      - '.github/workflows/test-evals-ai-reusable.yml'
   workflow_dispatch:
     inputs:
       branch:

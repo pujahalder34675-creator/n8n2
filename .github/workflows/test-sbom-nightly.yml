@@ -1,9 +1,7 @@
 name: 'Test: Nightly SBOM Validation'
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    # Run after the 00:00 UTC nightly Docker build.
-    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:

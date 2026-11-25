@@ -1,16 +1,8 @@
 name: 'Build: Benchmark Image'
 
+# Run upstream automation only on request in this standalone repository.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - 'packages/quality/efficiency/scale/benchmark/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/build-benchmark-image.yml'
-
 jobs:
   build:
     if: github.repository == 'n8n-io/n8n' && github.ref == 'refs/heads/master'

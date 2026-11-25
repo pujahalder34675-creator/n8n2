@@ -1,24 +1,8 @@
 name: 'Build: Base Image'
 run-name: "${{ github.event_name == 'workflow_dispatch' && format('Build: Base Image (push={0})', inputs.push) || '' }}"
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'docker/docker-bake.hcl'
-      - 'docker/images/n8n-base/Dockerfile'
-      - 'docker/images/n8n-base/Dockerfile.debian'
-      - '.github/scripts/docker/base-debian-smoke-check.mjs'
-      - '.github/workflows/build-base-image.yml'
-  pull_request:
-    paths:
-      - 'docker/docker-bake.hcl'
-      - 'docker/images/n8n-base/Dockerfile'
-      - 'docker/images/n8n-base/Dockerfile.debian'
-      - '.github/scripts/docker/base-debian-smoke-check.mjs'
-      - '.github/scripts/docker/bake-inputs-changed.mjs'
-      - '.github/workflows/build-base-image.yml'
   workflow_dispatch:
     inputs:
       push:

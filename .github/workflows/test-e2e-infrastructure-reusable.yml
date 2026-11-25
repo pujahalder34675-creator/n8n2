@@ -1,10 +1,8 @@
 name: 'Test: E2E Infrastructure'
 
+# Run upstream automation only on request in this standalone repository.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'
-
 concurrency:
   group: e2e-infrastructure-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true

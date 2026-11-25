@@ -1,0 +1,146 @@
+name: 'CI: Standalone'
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standalone-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  NODE_OPTIONS: --max-old-space-size=4096
+  TURBO_CONCURRENCY: '1'
+  N8N_DIAGNOSTICS_ENABLED: 'false'
+  N8N_VERSION_NOTIFICATIONS_ENABLED: 'false'
+  N8N_TEMPLATES_ENABLED: 'false'
+
+jobs:
+  checks:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [Build and typecheck, Lint, Unit tests]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Keep the upstream integrity checks, SafeChain, and GitHub cache support.
+      # This action needs no organization secrets or private runners.
+      - name: Set up Node.js 24 and pnpm 12.4.2
+        uses: ./.github/actions/setup-nodejs
+        with:
+          node-version: '24.22.2'
+          build-command: ''
+
+      - name: Build the workspace
+        if: matrix.check != 'Lint'
+        run: |
+          if ! pnpm build --concurrency=1 > "$RUNNER_TEMP/build.log" 2>&1; then
+            tail -n 200 "$RUNNER_TEMP/build.log"
+            exit 1
+          fi
+          tail -n 30 "$RUNNER_TEMP/build.log"
+
+      - name: Typecheck the workspace
+        if: matrix.check == 'Build and typecheck'
+        run: pnpm turbo run typecheck --concurrency=1
+
+      - name: Lint the workspace and styles
+        if: matrix.check == 'Lint'
+        run: |
+          if ! pnpm turbo run lint lint:styles --concurrency=1 > "$RUNNER_TEMP/lint.log" 2>&1; then
+            tail -n 200 "$RUNNER_TEMP/lint.log"
+            exit 1
+          fi
+          tail -n 30 "$RUNNER_TEMP/lint.log"
+          pnpm boundaries:check
+          pnpm check:workspace-private-deps
+
+      # These are the upstream backend-unit and frontend-test task selections.
+      # Serial package execution bounds memory without hiding test failures.
+      - name: Run backend unit tests
+        if: matrix.check == 'Unit tests'
+        run: >-
+          pnpm turbo run test:unit --concurrency=1
+          --filter='!./packages/frontend/**'
+          --filter='!./packages/modules/*/frontend'
+
+      - name: Run frontend unit tests
+        if: matrix.check == 'Unit tests'
+        run: >-
+          pnpm turbo run test --concurrency=1
+          --filter='./packages/frontend/**'
+          --filter='./packages/modules/*/frontend'
+          -- --maxWorkers=1
+
+      - name: Keep failure logs
+        if: failure()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: standalone-${{ matrix.check }}-logs
+          path: |
+            ${{ runner.temp }}/build.log
+            ${{ runner.temp }}/lint.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  workflow-and-docker-config:
+    name: Workflow and local Docker validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Parse all workflow YAML
+        run: |
+          python3 -m venv "$RUNNER_TEMP/workflow-yaml"
+          "$RUNNER_TEMP/workflow-yaml/bin/pip" install --disable-pip-version-check PyYAML==6.0.3
+          "$RUNNER_TEMP/workflow-yaml/bin/python" - <<'PY'
+          from pathlib import Path
+          import yaml
+          paths = sorted(Path('.github/workflows').glob('*.y*ml'))
+          paths.append(Path('docker/compose.local.yml'))
+          for path in paths:
+              with path.open() as stream:
+                  yaml.safe_load(stream)
+          print(f'Parsed {len(paths)} YAML files')
+          PY
+
+      - name: Install verified actionlint
+        run: |
+          cd "$RUNNER_TEMP"
+          version=1.7.11
+          asset="actionlint_${version}_linux_amd64.tar.gz"
+          base="https://github.com/rhysd/actionlint/releases/download/v${version}"
+          curl --fail --silent --show-error --location --retry 3 "$base/$asset" -o "$asset"
+          curl --fail --silent --show-error --location --retry 3 "$base/actionlint_${version}_checksums.txt" -o actionlint-checksums.txt
+          expected=$(awk -v name="$asset" '$2 == name { print $1 }' actionlint-checksums.txt)
+          test -n "$expected"
+          printf '%s  %s\n' "$expected" "$asset" | sha256sum --check -
+          tar -xzf "$asset" actionlint
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Lint active standalone workflows
+        run: actionlint .github/workflows/ci-main.yml .github/workflows/ci-docker-local.yml
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Validate local Compose configuration
+        run: docker compose -f docker/compose.local.yml config --quiet
+
+      - name: Validate the source Dockerfile
+        run: docker buildx build --check --file docker/images/n8n/Dockerfile.local .

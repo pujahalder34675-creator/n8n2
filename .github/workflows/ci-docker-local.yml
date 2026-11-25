@@ -1,0 +1,133 @@
+name: 'CI: Local Docker build'
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/ci-docker-local.yml'
+      - '.github/scripts/docker/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'patches/**'
+      - 'scripts/build-n8n.mjs'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/ci-docker-local.yml'
+      - '.github/scripts/docker/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'patches/**'
+      - 'scripts/build-n8n.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show resources and reclaim unused SDK space
+        run: |
+          nproc
+          free -h
+          df -h
+          # This job runs on a disposable GitHub-hosted runner and uses no SDKs.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h
+          docker version
+          docker compose version
+
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Validate local Docker configuration
+        run: |
+          docker compose -f docker/compose.local.yml config --quiet
+          docker buildx build --check --file docker/images/n8n/Dockerfile.local .
+
+      - name: Build local image from source
+        run: |
+          set -euo pipefail
+          docker compose --progress plain -f docker/compose.local.yml build \
+            2>&1 | tee "$RUNNER_TEMP/n8n2-docker-build.log"
+
+      - name: Start the image and check the application
+        run: |
+          set -euo pipefail
+          docker compose -f docker/compose.local.yml up -d --no-build --wait --wait-timeout 240
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 2 \
+            --connect-timeout 5 --max-time 10 \
+            http://127.0.0.1:5678/healthz/readiness > "$RUNNER_TEMP/n8n2-readiness.json"
+          curl --fail --silent --show-error \
+            http://127.0.0.1:5678/rest/settings > "$RUNNER_TEMP/n8n2-settings.json"
+          curl --fail --silent --show-error \
+            http://127.0.0.1:5678/ > "$RUNNER_TEMP/n8n2-index.html"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ['RUNNER_TEMP'])
+          readiness = json.loads((root / 'n8n2-readiness.json').read_text())
+          assert readiness.get('status') == 'ok', readiness
+          settings = json.loads((root / 'n8n2-settings.json').read_text())
+          data = settings.get('data')
+          assert isinstance(data, dict), 'Settings response has no data object'
+          assert data.get('settingsMode') == 'public', 'Public settings were not returned'
+          assert isinstance(data.get('userManagement'), dict), 'User management settings are missing'
+          html = (root / 'n8n2-index.html').read_text().lower()
+          assert '<html' in html and 'id="app"' in html, 'The editor HTML is missing'
+          print('Application readiness, public settings, and editor HTML passed.')
+          PY
+
+      - name: Exercise native modules inside the runtime image
+        run: |
+          docker compose -f docker/compose.local.yml exec -T n8n node --input-type=module \
+            < .github/scripts/docker/native-addons-smoke-check.mjs
+          docker compose -f docker/compose.local.yml exec -T n8n node --input-type=module \
+            < .github/scripts/docker/kafka-native-smoke-check.mjs
+
+      - name: Collect Docker logs
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/n8n2-docker-logs"
+          docker compose -f docker/compose.local.yml ps --all \
+            > "$RUNNER_TEMP/n8n2-docker-logs/containers.txt" 2>&1 || true
+          docker compose -f docker/compose.local.yml logs --no-color \
+            > "$RUNNER_TEMP/n8n2-docker-logs/application.log" 2>&1 || true
+          df -h > "$RUNNER_TEMP/n8n2-docker-logs/disk.txt"
+          free -h > "$RUNNER_TEMP/n8n2-docker-logs/memory.txt"
+
+      - name: Stop containers and remove test data
+        if: always()
+        run: docker compose -f docker/compose.local.yml down --volumes --remove-orphans
+
+      - name: Upload build and application logs
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: local-docker-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/n8n2-docker-build.log
+            ${{ runner.temp }}/n8n2-docker-logs/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -2,14 +2,9 @@ name: 'CI: Owners Assign Reviewers'
 
 # Request all owning teams or only required teams, depending on the label.
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  pull_request:
-    types:
-      - labeled
-      - synchronize
-      - reopened
-    branches:
-      - master
+  workflow_dispatch:
 
 permissions:
   contents: read

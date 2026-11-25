@@ -8,12 +8,8 @@ name: Probe npm Registry Path
 # Temporary — delete along with .github/scripts/probe-registry.mjs once
 # root-caused.
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  # workflow_dispatch only registers once this file is on the default branch, so
-  # the push trigger is what actually runs the probe from a topic branch.
-  push:
-    branches:
-      - 'probe-registry**'
   workflow_dispatch:
     inputs:
       reqs:

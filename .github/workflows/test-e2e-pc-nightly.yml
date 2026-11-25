@@ -4,9 +4,8 @@ name: 'Test: E2E on -pc image'
 # exclude. So: assert the published -pc image boots pointer-compressed, then
 # run the full suite against a test-enabled twin (build-variant: pc).
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    - cron: '0 2 * * *' # after the nightly Docker build at midnight
   workflow_dispatch:
     inputs:
       published-image:

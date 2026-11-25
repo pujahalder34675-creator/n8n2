@@ -22,9 +22,8 @@
 
 name: 'Security: Sync Bundle Branches'
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
 
 # Least privilege by default; the sync job opts into exactly what it needs.

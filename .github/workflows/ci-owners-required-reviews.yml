@@ -5,13 +5,8 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('CI: Owners Re
 # It also asks DevHub to post the PR review overview comment.
 # Keep the comment here: this repository runs only allowed workflows on pull_request_target.
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review, edited, labeled, unlabeled]
-  workflow_run:
-    workflows: ['Util: Notify PR Status']
-    types: [completed]
-  merge_group:
   workflow_dispatch:
     inputs:
       pr_number:

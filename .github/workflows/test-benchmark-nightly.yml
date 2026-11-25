@@ -1,9 +1,8 @@
 name: 'Test: Benchmark Nightly'
 run-name: Benchmark ${{ inputs.n8n_tag || 'nightly' }}
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    - cron: '30 1,2,3 * * *'
   workflow_dispatch:
     inputs:
       debug:

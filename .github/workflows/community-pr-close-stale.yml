@@ -8,9 +8,8 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('Community: Cl
 # "Needs Feedback" is the legacy equivalent of triage:needs-info (predates the
 # triage:* convention) and still sits on open community PRs awaiting a reply.
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    - cron: '0 9 * * 1-5' # weekdays 9:00 UTC
   workflow_dispatch:
     inputs:
       dry-run:

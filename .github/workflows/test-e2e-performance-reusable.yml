@@ -3,12 +3,10 @@ name: 'Test: E2E Performance'
 permissions:
   contents: read
 
+# Run upstream automation only on request in this standalone repository.
 on:
   workflow_call:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight
-
 jobs:
   # Cache-aware: no-op if an ancestor already populated the SHA-keyed cache.
   prepare-docker:

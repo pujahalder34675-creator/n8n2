@@ -13,9 +13,9 @@ name: Hide outdated cubic review comments
 # is this same repo, so the job below is skipped for PRs from forks -- outdated
 # cubic comments on external-contributor PRs won't be minimized.
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  pull_request:
-    types: [synchronize]
+  workflow_dispatch:
 
 permissions:
   pull-requests: write

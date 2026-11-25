@@ -25,9 +25,8 @@
 
 name: 'Util: Sync master to 3.x'
 
+# Run upstream automation only on request in this standalone repository.
 on:
-  schedule:
-    - cron: '0 6 * * *'
   workflow_dispatch:
 
 # Serialize syncs — never run two at once.
