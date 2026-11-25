@@ -1,0 +1,50 @@
+# Build the application from this checkout. No n8n application or base image is pulled.
+# Keep this official Node pin in sync with BUILDER_IMAGE in docker/docker-bake.hcl.
+ARG NODE_IMAGE=node:26.13.0-alpine3.24@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216
+FROM ${NODE_IMAGE} AS source-builder
+
+RUN apk add --no-cache build-base linux-headers python3 git openssl librdkafka-dev \
+    && npm install --global pnpm@12.4.2
+WORKDIR /src
+ENV CI=true \
+    DOCKER_BUILD=true \
+    BUILD_LIBRDKAFKA=0 \
+    NODE_OPTIONS=--max-old-space-size=6144 \
+    TURBO_CONCURRENCY=2 \
+    NODE_GYP=/usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js
+COPY . .
+RUN pnpm install --frozen-lockfile \
+    && (pnpm build:deploy > /tmp/n8n-build.log 2>&1 || { tail -n 100 /tmp/n8n-build.log; exit 1; })
+
+# Deploy strips prebuilds. Compile these modules for the image's Node and libc.
+RUN cd /src/compiled/node_modules/isolated-vm \
+    && rm -rf prebuilds \
+    && node "$NODE_GYP" rebuild --release -j 2 \
+    && cd /src/compiled/node_modules/sqlite3 \
+    && node "$NODE_GYP" rebuild --release \
+    && cd /src/compiled/node_modules/.pnpm/@confluentinc+kafka-javascript@*/node_modules/@confluentinc/kafka-javascript \
+    && node "$NODE_GYP" rebuild --release
+
+FROM ${NODE_IMAGE} AS runtime
+ENV NODE_ENV=production \
+    N8N_RELEASE_TYPE=dev \
+    SHELL=/bin/sh \
+    MAGICK_CODER_STABILITY=PRIMARY
+RUN apk add --no-cache openssh git openssl graphicsmagick tini tzdata ca-certificates \
+        libc6-compat librdkafka fontconfig ttf-dejavu \
+    && for coder in msl mvg pcd svg url; do \
+        rm -f /usr/lib/GraphicsMagick-*/modules-*/coders/$coder.la \
+              /usr/lib/GraphicsMagick-*/modules-*/coders/$coder.so; \
+    done
+WORKDIR /home/node
+COPY --from=source-builder /src/compiled /usr/local/lib/node_modules/n8n
+COPY docker/images/n8n/docker-entrypoint.sh /docker-entrypoint.sh
+RUN ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n \
+    && chmod +x /docker-entrypoint.sh \
+    && mkdir -p /home/node/.n8n \
+    && chown -R node:node /home/node
+EXPOSE 5678/tcp
+USER node
+ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
+LABEL org.opencontainers.image.title="n8n2" \
+      org.opencontainers.image.source="https://github.com/pujahalder34675-creator/n8n2"

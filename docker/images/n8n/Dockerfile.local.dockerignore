@@ -1,0 +1,14 @@
+# Override the root whitelist so the source build receives the full workspace.
+**/.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.turbo
+**/.agent-setup
+**/coverage
+compiled
+vendor
+.env
+.env.*
+!**/.env*.example
+*.log
